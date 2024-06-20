@@ -330,7 +330,7 @@ def main():
             sensor_hamb = 70
             sensor_ph = 6
             sensor_lux = 12000
-            sensor_tds = 1.5
+            sensor_tds = 0.7
             sensor_tsol = 16.5
             """""
             sensor_tamb = read_tamb()
