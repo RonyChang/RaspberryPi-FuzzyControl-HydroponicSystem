@@ -62,38 +62,6 @@ def read_tds():
 def read_tsol():
     return read_sensor("TSOL")
 
-"""
-def read_tamb():
-    response = requests.get(f"{API_URL}/metrics/get-last-metric-from-sensor/TAMB")
-    data = response.json()
-    value_tamb = float(data["value"])  # Para que me de solo el valor del sensor
-    return value_tamb
-def read_hamb():
-    response = requests.get(f"{API_URL}/metrics/get-last-metric-from-sensor/HAMB")
-    data = response.json()
-    value_hamb = float(data["value"])  # Para que me de solo el valor del sensor
-    return value_hamb
-def read_ph():
-    response = requests.get(f"{API_URL}/metrics/get-last-metric-from-sensor/PH")
-    data = response.json()
-    value_ph = float(data["value"])  # Para que me de solo el valor del sensor
-    return value_ph
-def read_lux():
-    response = requests.get(f"{API_URL}/metrics/get-last-metric-from-sensor/LUX")
-    data = response.json()
-    value_lux = float(data["value"])  # Para que me de solo el valor del sensor
-    return value_lux
-def read_tds():
-    response = requests.get(f"{API_URL}/metrics/get-last-metric-from-sensor/TDS")
-    data = response.json()
-    value_tds = float(data["value"])  # Para que me de solo el valor del sensor
-    return value_tds
-def read_tsol():
-    response = requests.get(f"{API_URL}/metrics/get-last-metric-from-sensor/TSOL")
-    data = response.json()
-    value_tsol = float(data["value"])  # Para que me de solo el valor del sensor
-    return value_tsol
-"""
 
 def control_leds(pwm_leds_value, hora_inicio, hora_fin):
     current_hour = datetime.now().hour
@@ -138,26 +106,35 @@ def control_dosificadora_b(action_time_sB):
 def fuzzy_logic_control_1(sensor_ph,sensor_tds):
     # Implementar lógica difusa aquí
     # Primer sistema difuso: pH y TDS
-    ph = ctrl.Antecedent(np.arange(0, 14, 0.1), 'ph')
-    tds = ctrl.Antecedent(np.arange(0, 3000, 1), 'tds')
-    pump_time = ctrl.Consequent(np.arange(0, 10, 0.1), 'pump_time')
+    ph = ctrl.Antecedent(np.arange(2.5, 10, 0.1), 'ph')
+    tds = ctrl.Antecedent(np.arange(0, 5, 0.1), 'tds')
+    pump_time = ctrl.Consequent(np.arange(0, 100, 1), 'pump_time')
 
     # Definir conjuntos difusos para cada variable
-    ph['low'] = fuzz.trimf(ph.universe, [0, 0, 7])
-    ph['high'] = fuzz.trimf(ph.universe, [7, 14, 14])
+    ph['bajo'] = fuzz.trapmf(ph.universe, [2.5, 2.5, 5.5, 5.75])
+    ph['normal'] = fuzz.trapmf(ph.universe, [5.5, 5.75, 6.75, 7.0])
+    ph['alto'] = fuzz.trapmf(ph.universe, [6.75, 7, 10, 10])
 
-    tds['low'] = fuzz.trimf(tds.universe, [0, 0, 1500])
-    tds['high'] = fuzz.trimf(tds.universe, [1500, 3000, 3000])
+    tds['bajo'] = fuzz.trapmf(tds.universe, [0, 0, 0.8, 1.3])
+    tds['normal'] = fuzz.trapmf(tds.universe, [1, 1.3, 1.7, 2])
+    tds['alto'] = fuzz.trapmf(tds.universe, [1.7, 2.2, 5, 5])
 
-    pump_time['short'] = fuzz.trimf(pump_time.universe, [0, 0, 5])
-    pump_time['long'] = fuzz.trimf(pump_time.universe, [5, 10, 10])
+    pump_time['off'] = fuzz.trimf(pump_time.universe, [0, 0, 50])
+    pump_time['on'] = fuzz.trimf(pump_time.universe, [50, 100, 100])
 
     # Reglas difusas
-    rule1 = ctrl.Rule(ph['low'] & tds['low'], pump_time['short'])
-    rule2 = ctrl.Rule(ph['high'] | tds['high'], pump_time['long'])
+    rule1 = ctrl.Rule(ph['bajo'] & tds['alto'], pump_time['off'])
+    rule2 = ctrl.Rule(ph['bajo'] & tds['normal'], pump_time['off'])
+    rule3 = ctrl.Rule(ph['bajo'] & tds['bajo'], pump_time['on'])
+    rule4 = ctrl.Rule(ph['normal'] & tds['alto'], pump_time['off'])
+    rule5 = ctrl.Rule(ph['normal'] & tds['normal'], pump_time['off'])
+    rule6 = ctrl.Rule(ph['normal'] & tds['bajo'], pump_time['on'])
+    rule7 = ctrl.Rule(ph['alto'] & tds['alto'], pump_time['off'])
+    rule8 = ctrl.Rule(ph['alto'] & tds['normal'], pump_time['on'])
+    rule9 = ctrl.Rule(ph['alto'] & tds['bajo'], pump_time['on'])
 
     # Crear sistema difuso
-    pump_ctrl = ctrl.ControlSystem([rule1, rule2])
+    pump_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9])
     pump_sim = ctrl.ControlSystemSimulation(pump_ctrl)
 
     # Probar el sistema con valores de entrada
@@ -172,30 +149,70 @@ def fuzzy_logic_control_1(sensor_ph,sensor_tds):
 def fuzzy_logic_control_2(sensor_tamb,sensor_hamb,sensor_tsol):
 
     # Segundo sistema difuso: Temperatura del agua, temperatura ambiente y humedad
-    temp_water = ctrl.Antecedent(np.arange(0, 50, 1), 'temp_water')
-    temp_ambient = ctrl.Antecedent(np.arange(0, 50, 1), 'temp_ambient')
-    humidity = ctrl.Antecedent(np.arange(0, 100, 1), 'humidity')
-    pump_time_water = ctrl.Consequent(np.arange(0, 10, 0.1), 'pump_time_water')
+    temp_water = ctrl.Antecedent(np.arange(8, 30, 0.1), 'temp_water')
+    temp_ambient = ctrl.Antecedent(np.arange(10, 30, 0.1), 'temp_ambient')
+    humidity = ctrl.Antecedent(np.arange(40, 95, 1), 'humidity')
+    pump_time_water = ctrl.Consequent(np.arange(0, 100, 1), 'pump_time_water')
 
     # Definir conjuntos difusos para cada variable
-    temp_water['low'] = fuzz.trimf(temp_water.universe, [0, 0, 25])
-    temp_water['high'] = fuzz.trimf(temp_water.universe, [25, 50, 50])
+    temp_water['baja'] = fuzz.trimf(temp_water.universe, [8, 8, 16])
+    temp_water['normal'] = fuzz.trimf(temp_water.universe, [14, 16, 18])
+    temp_water['alta'] = fuzz.trimf(temp_water.universe, [16, 30, 30])
 
-    temp_ambient['low'] = fuzz.trimf(temp_ambient.universe, [0, 0, 25])
-    temp_ambient['high'] = fuzz.trimf(temp_ambient.universe, [25, 50, 50])
+    temp_ambient['baja'] = fuzz.trimf(temp_ambient.universe, [10, 10, 16])
+    temp_ambient['normal'] = fuzz.trimf(temp_ambient.universe, [17, 19.5, 22])
+    temp_ambient['alta'] = fuzz.trimf(temp_ambient.universe, [23, 26.5, 30])
 
-    humidity['low'] = fuzz.trimf(humidity.universe, [0, 0, 50])
-    humidity['high'] = fuzz.trimf(humidity.universe, [50, 100, 100])
+    humidity['baja'] = fuzz.trimf(humidity.universe, [40, 40, 55])
+    humidity['normal'] = fuzz.trimf(humidity.universe, [50, 65, 80])
+    humidity['alta'] = fuzz.trapmf(humidity.universe, [75, 90, 95, 95])
 
-    pump_time_water['short'] = fuzz.trimf(pump_time_water.universe, [0, 0, 5])
-    pump_time_water['long'] = fuzz.trimf(pump_time_water.universe, [5, 10, 10])
+    pump_time_water['off'] = fuzz.trimf(pump_time_water.universe, [0, 0, 50])
+    pump_time_water['on'] = fuzz.trimf(pump_time_water.universe, [50, 100, 100])
 
-    # Reglas difusas
-    rule3 = ctrl.Rule(temp_water['low'] & temp_ambient['low'] & humidity['low'], pump_time_water['short'])
-    rule4 = ctrl.Rule(temp_water['high'] | temp_ambient['high'] | humidity['high'], pump_time_water['long'])
+   # Reglas Difusas
+    rule1 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & humidity['baja'], pump_time_water['off'])
+    rule2 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & humidity['normal'], pump_time_water['off'])
+    rule3 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & humidity['alta'], pump_time_water['on'])
 
-    # Crear sistema difuso
-    water_pump_ctrl = ctrl.ControlSystem([rule3, rule4])
+    rule4 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & humidity['baja'], pump_time_water['off'])
+    rule5 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & humidity['normal'], pump_time_water['off'])
+    rule6 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & humidity['alta'], pump_time_water['on'])
+
+    rule7 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & humidity['baja'], pump_time_water['off'])
+    rule8 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & humidity['normal'], pump_time_water['on'])
+    rule9 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & humidity['alta'], pump_time_water['on'])
+
+    rule10 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & humidity['baja'], pump_time_water['off'])
+    rule11 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & humidity['normal'], pump_time_water['off'])
+    rule12 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & humidity['alta'], pump_time_water['on'])
+
+    rule13 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & humidity['baja'], pump_time_water['off'])
+    rule14 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & humidity['normal'], pump_time_water['on'])
+    rule15 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & humidity['alta'], pump_time_water['on'])
+
+    rule16 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & humidity['baja'], pump_time_water['off'])
+    rule17 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & humidity['normal'], pump_time_water['on'])
+    rule18 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & humidity['alta'], pump_time_water['on'])
+
+    rule19 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & humidity['baja'], pump_time_water['off'])
+    rule20 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & humidity['normal'], pump_time_water['off'])
+    rule21 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & humidity['alta'], pump_time_water['off'])
+
+    rule22 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & humidity['baja'], pump_time_water['off'])
+    rule23 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & humidity['normal'], pump_time_water['off'])
+    rule24 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & humidity['alta'], pump_time_water['off'])
+
+    rule25 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & humidity['baja'], pump_time_water['off'])
+    rule26 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & humidity['normal'], pump_time_water['off'])
+    rule27 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & humidity['alta'], pump_time_water['off'])
+
+    # Crear el sistema de control difuso
+    water_pump_ctrl = ctrl.ControlSystem([
+        rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, 
+        rule10, rule11, rule12, rule13, rule14, rule15, rule16, rule17, rule18, 
+        rule19, rule20, rule21, rule22, rule23, rule24, rule25, rule26, rule27
+    ])
     water_pump_sim = ctrl.ControlSystemSimulation(water_pump_ctrl)
 
     water_pump_sim.input['temp_water'] = sensor_tsol
@@ -211,28 +228,91 @@ def fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux):
 
     # Tercer sistema difuso: Temperatura ambiente, temperatura del agua e intensidad lumínica
     temp_water = ctrl.Antecedent(np.arange(0, 50, 1), 'temp_water')
-    temp_ambient = ctrl.Antecedent(np.arange(0, 50, 1), 'temp_ambient')
-    light_intensity = ctrl.Antecedent(np.arange(0, 1000, 1), 'light_intensity')
+    temp_ambient = ctrl.Antecedent(np.arange(10, 30, 0.1), 'temp_ambient')
+    light_intensity = ctrl.Antecedent(np.arange(0, 15000, 1), 'light_intensity')
     pwm = ctrl.Consequent(np.arange(0, 100, 1), 'pwm')
 
     # Definir conjuntos difusos para cada variable
-    temp_water['low'] = fuzz.trimf(temp_water.universe, [0, 0, 25])
-    temp_water['high'] = fuzz.trimf(temp_water.universe, [25, 50, 50])
+    temp_water['baja'] = fuzz.trimf(temp_water.universe, [8, 8, 16])
+    temp_water['normal'] = fuzz.trimf(temp_water.universe, [14, 16, 18])
+    temp_water['alta'] = fuzz.trimf(temp_water.universe, [16, 30, 30])
 
-    temp_ambient['low'] = fuzz.trimf(temp_ambient.universe, [0, 0, 25])
-    temp_ambient['high'] = fuzz.trimf(temp_ambient.universe, [25, 50, 50])
+    temp_ambient['baja'] = fuzz.trimf(temp_ambient.universe, [10, 10, 16])
+    temp_ambient['normal'] = fuzz.trimf(temp_ambient.universe, [17, 19.5, 22])
+    temp_ambient['alta'] = fuzz.trimf(temp_ambient.universe, [23, 26.5, 30])
 
-    light_intensity['low'] = fuzz.trimf(light_intensity.universe, [0, 0, 500])
-    light_intensity['high'] = fuzz.trimf(light_intensity.universe, [500, 1000, 1000])
+    light_intensity['muy baja'] = fuzz.trapmf(light_intensity.universe, [0, 0, 4000, 6000])
+    light_intensity['baja'] = fuzz.trapmf(light_intensity.universe, [5000, 7000, 9000, 11000])
+    light_intensity['normal'] = fuzz.trapmf(light_intensity.universe, [10000, 12000, 13000, 14000])
+    light_intensity['alta'] = fuzz.trapmf(light_intensity.universe, [13000, 14000, 15000, 15000])
+    light_intensity['muy alta'] = fuzz.trapmf(light_intensity.universe, [14000, 15000, 15000, 15000])
 
-    pwm['dim'] = fuzz.trimf(pwm.universe, [0, 0, 50])
-    pwm['bright'] = fuzz.trimf(pwm.universe, [50, 100, 100])
+    pwm['bajar'] = fuzz.trimf(pwm.universe, [0, 0, 40])
+    pwm['mantener'] = fuzz.trimf(pwm.universe, [25, 50, 75])
+    pwm['subir'] = fuzz.trimf(pwm.universe, [60, 100, 100])
 
     # Reglas difusas
-    rule5 = ctrl.Rule(light_intensity['low'], pwm['dim'])
-    rule6 = ctrl.Rule(light_intensity['high'], pwm['bright'])
+    rule1 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir']),
+    rule2 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir']),
+    rule3 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener']),
+    rule4 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener']),
+    rule5 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar']),
 
-    light_ctrl = ctrl.ControlSystem([rule5, rule6])
+    rule6 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir']),
+    rule7 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir']),
+    rule8 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener']),
+    rule9 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener']),
+    rule10 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar']),
+    
+    rule11 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir']),
+    rule12 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir']),
+    rule13 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener']),
+    rule14 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener']),
+    rule15 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar']),
+    
+    rule16 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir']),
+    rule17 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir']),
+    rule18 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener']),
+    rule19 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener']),
+    rule20 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar']),
+    
+    rule21 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir']),
+    rule22 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir']),
+    rule23 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener']),
+    rule24 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener']),
+    rule25 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar']),
+    
+    rule26 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir']),
+    rule27 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir']),
+    rule28 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener']),
+    rule29 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener']),
+    rule30 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar']),
+    
+    rule31 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir']),
+    rule32 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir']),
+    rule33 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener']),
+    rule34 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener']),
+    rule35 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar']),
+    
+    rule36 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir']),
+    rule37 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir']),
+    rule38 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener']),
+    rule39 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener']),
+    rule40 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar']),
+    
+    rule41 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir']),
+    rule42 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir']),
+    rule43 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener']),
+    rule44 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener']),
+    rule45 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar']),
+
+    light_ctrl = ctrl.ControlSystem([
+        rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10,
+        rule11, rule12, rule13, rule14, rule15, rule16, rule17, rule18, rule19,
+        rule20, rule21, rule22, rule23, rule24, rule25, rule26, rule27, rule28,
+        rule29, rule30, rule31, rule32, rule33, rule34, rule35, rule36, rule37,
+        rule38, rule39, rule40, rule41, rule42, rule43, rule44, rule45
+    ])
     light_sim = ctrl.ControlSystemSimulation(light_ctrl)
 
     light_sim.input['temp_water'] = sensor_tamb
@@ -246,118 +326,60 @@ def fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux):
 def main():
     try:
         while True:
+            sensor_tamb = 18
+            sensor_hamb = 70
+            sensor_ph = 6
+            sensor_lux = 12000
+            sensor_tds = 1.5
+            sensor_tsol = 16.5
+            """""
             sensor_tamb = read_tamb()
             sensor_hamb = read_hamb()
             sensor_ph = read_ph()
             sensor_lux = read_lux()
             sensor_tds = read_tds()
             sensor_tsol = read_tsol()
+            """""
 
-            tiempo_dosificadora_b = fuzzy_logic_control_1(sensor_ph,sensor_tds)
-            tiempo_bomba = fuzzy_logic_control_2(sensor_tamb,sensor_hamb,sensor_tsol)
-            pwm_leds_value = fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux)
-
-            control_bomba(tiempo_bomba)
-            
+            # Controlar bombas dosificadoras
+            dosificadora = fuzzy_logic_control_1(sensor_ph,sensor_tds)
+            if dosificadora > 50:
+                tiempo_min = 2
+                tiempo_max = 42
+                tiempo_dosificadora_b = tiempo_min + (tiempo_max - tiempo_min) * (dosificadora - 50) / (100 - 50)
+            else:
+                tiempo_dosificadora_b = 0
             control_dosificadora_b(tiempo_dosificadora_b)
             tiempo_dosificadora_a = (tiempo_dosificadora_b)*5/2
             control_dosificadora_a(tiempo_dosificadora_a)
+            # aumentar control de bomba principal para revolver
 
-            control_leds(pwm_leds_value, 6, 18)  # Ejemplo: LEDs encendidos de 6 AM a 6 PM
+
+            # Controlar bomba principal
+            bomba = fuzzy_logic_control_2(sensor_tamb,sensor_hamb,sensor_tsol)
+            if bomba > 50:
+                tiempo_min = 60
+                tiempo_max = 180
+                tiempo_bomba = tiempo_min + (tiempo_max - tiempo_min) * (bomba - 50) / (100 - 50)
+            else:
+                tiempo_bomba = 0
+            control_bomba(tiempo_bomba)
+
+
+            # Controlar pwm leds
+            pwm_leds_value = fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux)
+
+            control_leds(pwm_leds_value, 6, 22)  # Ejemplo: LEDs encendidos de 6 AM a 10 PM
             time.sleep(60)  # Espera de un minuto antes de la siguiente lectura
 
 # Tiempo tiene que ser 
-# 140 ml -> 84 sec
-
+# 140 ml -> 84 sec       42   6s -> 10ml ->v
+ 
     except KeyboardInterrupt:
         GPIO.cleanup()
 
 if __name__ == "__main__":
     main()
-
-
-
-"""
-    # Definir las variables difusas de entrada
-    ph = ctrl.Antecedent(np.arange(5, 8, 0.1), 'ph')
-    conductividad = ctrl.Antecedent(np.arange(0, 2000, 1), 'conductividad')
-    humedad_ambiente = ctrl.Antecedent(np.arange(0, 100, 1), 'humedad_ambiente')
-    temperatura_ambiente = ctrl.Antecedent(np.arange(0, 50, 1), 'temperatura_ambiente')
-    temperatura_solucion = ctrl.Antecedent(np.arange(0, 50, 1), 'temperatura_solucion')
-
-    # Definir las funciones de membresía para las variables de entrada
-    ph['bajo'] = fuzz.trimf(ph.universe, [5, 5, 6])
-    ph['medio'] = fuzz.trimf(ph.universe, [5.5, 6, 6.5])
-    ph['alto'] = fuzz.trimf(ph.universe, [6, 7, 7])
-
-    conductividad['baja'] = fuzz.trimf(conductividad.universe, [0, 0, 1000])
-    conductividad['media'] = fuzz.trimf(conductividad.universe, [500, 1000, 1500])
-    conductividad['alta'] = fuzz.trimf(conductividad.universe, [1000, 2000, 2000])
-
-    humedad_ambiente['baja'] = fuzz.trimf(humedad_ambiente.universe, [0, 0, 50])
-    humedad_ambiente['media'] = fuzz.trimf(humedad_ambiente.universe, [25, 50, 75])
-    humedad_ambiente['alta'] = fuzz.trimf(humedad_ambiente.universe, [50, 100, 100])
-
-    temperatura_ambiente['baja'] = fuzz.trimf(temperatura_ambiente.universe, [0, 0, 25])
-    temperatura_ambiente['media'] = fuzz.trimf(temperatura_ambiente.universe, [20, 25, 30])
-    temperatura_ambiente['alta'] = fuzz.trimf(temperatura_ambiente.universe, [25, 50, 50])
-
-    temperatura_solucion['baja'] = fuzz.trimf(temperatura_solucion.universe, [0, 0, 25])
-    temperatura_solucion['media'] = fuzz.trimf(temperatura_solucion.universe, [20, 25, 30])
-    temperatura_solucion['alta'] = fuzz.trimf(temperatura_solucion.universe, [25, 50, 50])
-
-    # Definir las variables de salida para el tiempo de las bombas (Sugeno)
-    tiempo_dosificadora = ctrl.Consequent(np.arange(0, 300, 1), 'tiempo_dosificadora', defuzzify_method='sugeno')
-    tiempo_nutrientes = ctrl.Consequent(np.arange(0, 300, 1), 'tiempo_nutrientes', defuzzify_method='sugeno')
-
-    # Agregar las funciones de salida de Sugeno (constantes)
-    tiempo_dosificadora['corto'] = lambda x: 100  # Constante
-    tiempo_dosificadora['medio'] = lambda x: 200  # Constante
-    tiempo_dosificadora['largo'] = lambda x: 300  # Constante
-
-    tiempo_nutrientes['corto'] = lambda x: 100  # Constante
-    tiempo_nutrientes['medio'] = lambda x: 200  # Constante
-    tiempo_nutrientes['largo'] = lambda x: 300  # Constante
-
-    # Definir las reglas difusas de Sugeno para la bomba dosificadora
-    regla1 = ctrl.Rule(ph['bajo'] & conductividad['baja'], tiempo_dosificadora['corto'])
-    regla2 = ctrl.Rule(ph['medio'] & conductividad['media'], tiempo_dosificadora['medio'])
-    regla3 = ctrl.Rule(ph['alto'] & conductividad['alta'], tiempo_dosificadora['largo'])
-
-    # Definir las reglas difusas de Sugeno para la bomba de nutrientes
-    regla4 = ctrl.Rule(humedad_ambiente['baja'] & temperatura_ambiente['baja'] & temperatura_solucion['baja'], tiempo_nutrientes['corto'])
-    regla5 = ctrl.Rule(humedad_ambiente['media'] & temperatura_ambiente['media'] & temperatura_solucion['media'], tiempo_nutrientes['medio'])
-    regla6 = ctrl.Rule(humedad_ambiente['alta'] & temperatura_ambiente['alta'] & temperatura_solucion['alta'], tiempo_nutrientes['largo'])
-
-    # Crear el sistema de control difuso
-    sistema_dosificadora = ctrl.ControlSystem([regla1, regla2, regla3])
-    control_dosificadora = ctrl.ControlSystemSimulation(sistema_dosificadora)
-
-    sistema_nutrientes = ctrl.ControlSystem([regla4, regla5, regla6])
-    control_nutrientes = ctrl.ControlSystemSimulation(sistema_nutrientes)
-
-    # Probar el sistema con valores de entrada
-    control_dosificadora.input['ph'] = sensor_ph
-    control_dosificadora.input['conductividad'] = sensor_tds
-
-    control_nutrientes.input['humedad_ambiente'] = sensor_hamb
-    control_nutrientes.input['temperatura_ambiente'] = sensor_tamb
-    control_nutrientes.input['temperatura_solucion'] = sensor_tsol
-
-    # Computar la salida
-    control_dosificadora.compute()
-    control_nutrientes.compute()
-
-    print(f"Tiempo de la bomba dosificadora: {control_dosificadora.output['tiempo_dosificadora']}")
-    print(f"Tiempo de la bomba de nutrientes: {control_nutrientes.output['tiempo_nutrientes']}")
-
-    tiempo_bomba = 1
-    tiempo_dosificadora_a = 1
-    tiempo_dosificadora_b = 1
-    pwm_led = 1
-    
-    return tiempo_bomba, tiempo_dosificadora_a, tiempo_dosificadora_b, pwm_led
-"""
 
 
 
