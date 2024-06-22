@@ -252,59 +252,59 @@ def fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux):
     pwm['subir'] = fuzz.trimf(pwm.universe, [60, 100, 100])
 
     # Reglas difusas
-    rule1 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir']),
-    rule2 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir']),
-    rule3 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener']),
-    rule4 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener']),
-    rule5 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar']),
+    rule1 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir'])
+    rule2 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir'])
+    rule3 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener'])
+    rule4 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener'])
+    rule5 = ctrl.Rule(temp_water['baja'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar'])
 
-    rule6 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir']),
-    rule7 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir']),
-    rule8 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener']),
-    rule9 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener']),
-    rule10 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar']),
+    rule6 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir'])
+    rule7 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir'])
+    rule8 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener'])
+    rule9 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener'])
+    rule10 = ctrl.Rule(temp_water['baja'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar'])
     
-    rule11 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir']),
-    rule12 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir']),
-    rule13 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener']),
-    rule14 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener']),
-    rule15 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar']),
+    rule11 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir'])
+    rule12 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir'])
+    rule13 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener'])
+    rule14 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener'])
+    rule15 = ctrl.Rule(temp_water['baja'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar'])
     
-    rule16 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir']),
-    rule17 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir']),
-    rule18 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener']),
-    rule19 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener']),
-    rule20 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar']),
+    rule16 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir'])
+    rule17 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir'])
+    rule18 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener'])
+    rule19 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener'])
+    rule20 = ctrl.Rule(temp_water['normal'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar'])
     
-    rule21 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir']),
-    rule22 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir']),
-    rule23 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener']),
-    rule24 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener']),
-    rule25 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar']),
+    rule21 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir'])
+    rule22 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir'])
+    rule23 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener'])
+    rule24 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener'])
+    rule25 = ctrl.Rule(temp_water['normal'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar'])
     
-    rule26 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir']),
-    rule27 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir']),
-    rule28 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener']),
-    rule29 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener']),
-    rule30 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar']),
+    rule26 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir'])
+    rule27 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir'])
+    rule28 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener'])
+    rule29 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener'])
+    rule30 = ctrl.Rule(temp_water['normal'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar'])
     
-    rule31 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir']),
-    rule32 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir']),
-    rule33 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener']),
-    rule34 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener']),
-    rule35 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar']),
+    rule31 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['muy baja'], pwm['subir'])
+    rule32 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['baja'], pwm['subir'])
+    rule33 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['normal'], pwm['mantener'])
+    rule34 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['alta'], pwm['mantener'])
+    rule35 = ctrl.Rule(temp_water['alta'] & temp_ambient['baja'] & light_intensity['muy alta'], pwm['bajar'])
     
-    rule36 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir']),
-    rule37 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir']),
-    rule38 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener']),
-    rule39 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener']),
-    rule40 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar']),
+    rule36 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['muy baja'], pwm['subir'])
+    rule37 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['baja'], pwm['subir'])
+    rule38 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener'])
+    rule39 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener'])
+    rule40 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar'])
     
-    rule41 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir']),
-    rule42 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir']),
-    rule43 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener']),
-    rule44 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener']),
-    rule45 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar']),
+    rule41 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir'])
+    rule42 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir'])
+    rule43 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener'])
+    rule44 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['alta'], pwm['mantener'])
+    rule45 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['muy alta'], pwm['bajar'])
 
     light_ctrl = ctrl.ControlSystem([
         rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10,
