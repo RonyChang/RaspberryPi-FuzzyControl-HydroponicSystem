@@ -299,7 +299,6 @@ def fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux):
     rule38 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['normal'], pwm['mantener'])
     rule39 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['alta'], pwm['mantener'])
     rule40 = ctrl.Rule(temp_water['alta'] & temp_ambient['normal'] & light_intensity['muy alta'], pwm['bajar'])
-    
     rule41 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['muy baja'], pwm['subir'])
     rule42 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['baja'], pwm['subir'])
     rule43 = ctrl.Rule(temp_water['alta'] & temp_ambient['alta'] & light_intensity['normal'], pwm['mantener'])
@@ -330,7 +329,7 @@ def main():
             sensor_hamb = 70
             sensor_ph = 6
             sensor_lux = 12000
-            sensor_tds = 1.5
+            sensor_tds = 0.7
             sensor_tsol = 16.5
             """""
             sensor_tamb = read_tamb()
