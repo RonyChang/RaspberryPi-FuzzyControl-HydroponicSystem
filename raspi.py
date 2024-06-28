@@ -20,6 +20,9 @@ GPIO.setup(BOMBA_PIN, GPIO.OUT)
 GPIO.setup(DOSIFICADORA_A_PIN, GPIO.OUT)
 GPIO.setup(DOSIFICADORA_B_PIN, GPIO.OUT)
 
+# Inicializar PWM
+pwm = GPIO.PWM(LED_PIN, 1000)
+pwm.start(0)
 
 # URL de la API
 API_URL = "http://159.112.136.97:8080"
@@ -28,7 +31,7 @@ API_URL = "http://159.112.136.97:8080"
 I2C_BUS = 1
 BH1750_ADDRESS = 0x23
 
-
+# Definir funciones de lecturas de sensores en la API
 def read_sensor(sensor_name, retries=5, backoff_factor=0.5):
     for attempt in range(retries):
         try:
@@ -62,19 +65,17 @@ def read_tds():
 def read_tsol():
     return read_sensor("TSOL")
 
-
+# Definir funciones de control de actuadores
 def control_leds(pwm_leds_value, hora_inicio, hora_fin):
     current_hour = datetime.now().hour
     if hora_inicio <= current_hour < hora_fin:
         try:
-            pwm = GPIO.PWM(LED_PIN, 1000)
-            pwm.start(pwm_leds_value)
+            pwm.ChangeDutyCycle(pwm_leds_value)
         except Exception as e:
             print(f"Error controlling LEDs: {e}")
-            GPIO.output(LED_PIN, GPIO.LOW)
+            pwm.ChangeDutyCycle(0)
     else:
-        GPIO.output(LED_PIN, GPIO.LOW)
-
+        pwm.ChangeDutyCycle(0)
 
 def control_bomba(action_time_p):
     try:
@@ -103,8 +104,8 @@ def control_dosificadora_b(action_time_sB):
         print(f"Error controlando dosificadora B: {e}")
         GPIO.output(DOSIFICADORA_B_PIN, GPIO.LOW)
 
+# Definir Lógicas Difusas
 def fuzzy_logic_control_1(sensor_ph,sensor_tds):
-    # Implementar lógica difusa aquí
     # Primer sistema difuso: pH y TDS
     ph = ctrl.Antecedent(np.arange(2.5, 10, 0.1), 'ph')
     tds = ctrl.Antecedent(np.arange(0, 5, 0.1), 'tds')
@@ -147,7 +148,6 @@ def fuzzy_logic_control_1(sensor_ph,sensor_tds):
     return pump_sim.output['pump_time']
 
 def fuzzy_logic_control_2(sensor_tamb,sensor_hamb,sensor_tsol):
-
     # Segundo sistema difuso: Temperatura del agua, temperatura ambiente y humedad
     temp_water = ctrl.Antecedent(np.arange(8, 30, 0.1), 'temp_water')
     temp_ambient = ctrl.Antecedent(np.arange(10, 30, 0.1), 'temp_ambient')
@@ -223,9 +223,7 @@ def fuzzy_logic_control_2(sensor_tamb,sensor_hamb,sensor_tsol):
     #print(f"Tiempo de la bomba principal: {water_pump_sim.output['pump_time_water']}")
     return water_pump_sim.output['pump_time_water']
 
-
 def fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux):
-
     # Tercer sistema difuso: Temperatura ambiente, temperatura del agua e intensidad lumínica
     temp_water = ctrl.Antecedent(np.arange(0, 50, 1), 'temp_water')
     temp_ambient = ctrl.Antecedent(np.arange(10, 30, 0.1), 'temp_ambient')
@@ -321,24 +319,17 @@ def fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux):
     light_sim.compute()
     #print(f"Tiempo de la bomba dosificadora B: {pump_sim.output['pump_time']}")
     return light_sim.output['pwm']
-
+    
+# Funcion Principal
 def main():
     try:
         while True:
-            sensor_tamb = 18
-            sensor_hamb = 70
-            sensor_ph = 6
-            sensor_lux = 12000
-            sensor_tds = 0.7
-            sensor_tsol = 16.5
-            """""
             sensor_tamb = read_tamb()
             sensor_hamb = read_hamb()
             sensor_ph = read_ph()
             sensor_lux = read_lux()
             sensor_tds = read_tds()
             sensor_tsol = read_tsol()
-            """""
 
             # Controlar bombas dosificadoras
             dosificadora = fuzzy_logic_control_1(sensor_ph,sensor_tds)
@@ -353,7 +344,6 @@ def main():
             control_dosificadora_a(tiempo_dosificadora_a)
             # aumentar control de bomba principal para revolver
 
-
             # Controlar bomba principal
             bomba = fuzzy_logic_control_2(sensor_tamb,sensor_hamb,sensor_tsol)
             if bomba > 50:
@@ -364,22 +354,22 @@ def main():
                 tiempo_bomba = 0
             control_bomba(tiempo_bomba)
 
-
             # Controlar pwm leds
             pwm_leds_value = fuzzy_logic_control_3(sensor_tamb,sensor_hamb,sensor_lux)
-
             control_leds(pwm_leds_value, 6, 22)  # Ejemplo: LEDs encendidos de 6 AM a 10 PM
             time.sleep(60)  # Espera de un minuto antes de la siguiente lectura
 
 # Tiempo tiene que ser 
 # 140 ml -> 84 sec       42   6s -> 10ml ->v
  
+# Exepcion de corte mediante teclado
     except KeyboardInterrupt:
+        pwm.ChangeDutyCycle(0)
+        GPIO.output(LED_PIN, GPIO.LOW)
+        GPIO.output(BOMBA_PIN, GPIO.LOW)
+        GPIO.output(DOSIFICADORA_A_PIN, GPIO.LOW)
+        GPIO.output(DOSIFICADORA_B_PIN, GPIO.LOW)
         GPIO.cleanup()
 
 if __name__ == "__main__":
     main()
-
-
-
-
